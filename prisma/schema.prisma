@@ -1,0 +1,70 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+model OAuthState {
+  id String @id @default(cuid())
+  provider String
+  state String @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model SocialAccount {
+  id String @id @default(cuid())
+  platform String
+  externalId String?
+  displayName String?
+  accessToken String
+  refreshToken String?
+  expiresAt DateTime?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  targets PostTarget[]
+  analytics AnalyticsSnapshot[]
+}
+
+model Post {
+  id String @id @default(cuid())
+  videoName String
+  videoUrl String?
+  caption String?
+  schedule DateTime
+  status String @default("scheduled")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  targets PostTarget[]
+}
+
+model PostTarget {
+  id String @id @default(cuid())
+  postId String
+  accountId String?
+  platform String
+  status String @default("scheduled")
+  attempts Int @default(0)
+  externalPostId String?
+  errorMessage String?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  account SocialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  @@index([postId])
+  @@index([platform,status])
+}
+
+model AnalyticsSnapshot {
+  id String @id @default(cuid())
+  postId String
+  platform String
+  externalPostId String?
+  views Int @default(0)
+  likes Int @default(0)
+  comments Int @default(0)
+  shares Int @default(0)
+  watchSeconds Float?
+  capturedAt DateTime @default(now())
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@index([postId, platform, capturedAt])
+}

@@ -1,0 +1,2 @@
+import {redirect} from "next/navigation";import {createState} from "@/lib/oauth";
+export async function GET(){const state=await createState("youtube");const p=new URLSearchParams({client_id:process.env.YOUTUBE_CLIENT_ID,redirect_uri:`${process.env.APP_URL}/api/auth/youtube/callback`,response_type:"code",access_type:"offline",prompt:"consent",scope:"https://www.googleapis.com/auth/youtube.upload",state});redirect("https://accounts.google.com/o/oauth2/v2/auth?"+p)}
