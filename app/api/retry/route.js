@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import {NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import {postQueue} from "../../../lib/queue";
+import { getPostQueue } from "../../../lib/queue";
 
 export async function POST(req){
   try{
@@ -14,7 +14,7 @@ export async function POST(req){
       where:{id:targetId},
       data:{status:"scheduled",errorMessage:null}
     });
-    await postQueue.add("publish", {postId:t.postId,targetId:t.id},{attempts:3,backoff:{type:"exponential",delay:30000},removeOnComplete:true,removeOnFail:false});
+    await getPostQueue().add("publish", {postId:t.postId,targetId:t.id},{attempts:3,backoff:{type:"exponential",delay:30000},removeOnComplete:true,removeOnFail:false});
     return NextResponse.json({ok:true,target:updated});
   }catch(e){return NextResponse.json({error:e.message},{status:500});}
 }

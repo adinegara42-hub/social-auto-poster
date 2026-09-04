@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import {NextResponse} from "next/server";
 import {PrismaClient} from "@prisma/client";
-import {queue} from "../../../lib/queue.js";
+import {getPostQueue} from "../../../lib/queue.js";
 import {PLATFORMS, validateCaption, validateVideoName} from "../../../lib/validation.js";
 const prisma = new PrismaClient();
 
@@ -46,7 +46,7 @@ export async function POST(req) {
     });
 
     for(const target of post.targets){
-      await queue.add("publish",{targetId:target.id},{
+      await getPostQueue().add("publish",{targetId:target.id},{
         delay:Math.max(0,when.getTime()-Date.now()),
         attempts:3,
         backoff:{type:"exponential",delay:30_000},
