@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import {mkdir,writeFile} from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";

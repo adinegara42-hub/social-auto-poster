@@ -1,2 +1,3 @@
+export const dynamic = "force-dynamic";
 import {redirect} from "next/navigation";import {createState} from "@/lib/oauth";
 export async function GET(){const state=await createState("tiktok");const p=new URLSearchParams({client_key:process.env.TIKTOK_CLIENT_KEY,response_type:"code",scope:"user.info.basic,video.publish",redirect_uri:`${process.env.APP_URL}/api/auth/tiktok/callback`,state});redirect("https://www.tiktok.com/v2/auth/authorize/?"+p)}
