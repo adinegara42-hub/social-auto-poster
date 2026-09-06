@@ -287,10 +287,29 @@ export default function Home(){
         </select>
 
         {platformAccounts.length===0 && (
-          <p>
-            ⚠️ Belum ada akun {platform} yang terhubung.
-          </p>
-        )}
+  <div>
+    <p>
+      ⚠️ Belum ada akun {platform} yang terhubung.
+    </p>
+
+    {platform==="tiktok" && (
+      <a
+        href="/api/auth/tiktok"
+        style={{
+          display:"inline-block",
+          padding:"12px 18px",
+          marginTop:10,
+          border:"1px solid #000",
+          borderRadius:8,
+          textDecoration:"none",
+          fontWeight:"bold"
+        }}
+      >
+        🔗 Hubungkan TikTok
+      </a>
+    )}
+  </div>
+)}
 
         <label>Jadwal posting</label>
 
