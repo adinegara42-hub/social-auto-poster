@@ -9,7 +9,7 @@ export async function GET() {
   const p = new URLSearchParams({
     client_key: process.env.TIKTOK_CLIENT_KEY,
     response_type: "code",
-    scope: "user.info.basic,video.publish,video.upload",
+    scope: "user.info.basic",
     redirect_uri: `${process.env.APP_URL}/api/auth/tiktok/callback`,
     state,
   });
