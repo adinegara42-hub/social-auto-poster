@@ -1,350 +1,244 @@
 "use client";
 
-import {useEffect,useState} from "react";
+import { useEffect, useState } from "react";
 
-export default function Home(){
-  const [title,setTitle]=useState("Video baru");
-  const [platform,setPlatform]=useState("tiktok");
-  const [style,setStyle]=useState("persuasif");
-  const [result,setResult]=useState(null);
-  const [loading,setLoading]=useState(false);
+export default function Home() {
+  const [video, setVideo] = useState(null);
+  const [videoName, setVideoName] = useState("");
+  const [caption, setCaption] = useState("");
+  const [platform, setPlatform] = useState("tiktok");
+  const [accounts, setAccounts] = useState([]);
+  const [accountId, setAccountId] = useState("");
+  const [schedule, setSchedule] = useState("");
+  const [message, setMessage] = useState("");
 
-  const [videoName,setVideoName]=useState("");
-  const [caption,setCaption]=useState("");
-  const [schedule,setSchedule]=useState("");
-  const [accounts,setAccounts]=useState([]);
-  const [accountId,setAccountId]=useState("");
-  const [saveMessage,setSaveMessage]=useState("");
+  useEffect(() => {
+    fetch("/api/accounts")
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.accounts || [];
+        setAccounts(list);
 
-  useEffect(()=>{
-    loadAccounts();
-  },[]);
+        const tiktok = list.find((a) => a.platform === "tiktok");
+        if (tiktok) setAccountId(tiktok.id);
+      })
+      .catch(() => {});
+  }, []);
 
-  async function loadAccounts(){
-    try{
-      const r=await fetch("/api/accounts");
-      const j=await r.json();
-      setAccounts(j.items||[]);
-    }catch(e){
-      console.error(e);
+  function handleVideoChange(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      setMessage("File harus berupa video.");
+      return;
     }
+
+    setVideo(file);
+    setVideoName(file.name);
+    setMessage(`Video dipilih: ${file.name}`);
   }
 
-  async function generate(){
-    setLoading(true);
-    setResult(null);
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-    const r=await fetch("/api/ai/generate",{
-      method:"POST",
-      headers:{"content-type":"application/json"},
-      body:JSON.stringify({title,platform,style})
-    });
+    setMessage("Menyimpan posting...");
 
-    const j=await r.json();
-    setResult(j);
-
-    if(j.caption) setCaption(j.caption);
-    if(j.title) setVideoName(j.title);
-
-    setLoading(false);
-  }
-
-  async function savePost(){
-    setSaveMessage("");
-
-    if(!videoName){
-      setSaveMessage("Nama video wajib diisi.");
-      return;
-    }
-
-    if(!schedule){
-      setSaveMessage("Tanggal dan jam wajib diisi.");
-      return;
-    }
-
-    if(!accountId){
-      setSaveMessage("Akun sosial belum tersedia. Hubungkan akun terlebih dahulu.");
-      return;
-    }
-
-    try{
-      const r=await fetch("/api/posts",{
-        method:"POST",
-        headers:{"content-type":"application/json"},
-        body:JSON.stringify({
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           videoName,
+          videoUrl: "",
           caption,
-          schedule,
-          platforms:[platform],
-          accountIds:{
-            [platform]:accountId
-          }
-        })
+          schedule: schedule || null,
+          platforms: [platform],
+          accountIds: accountId ? [accountId] : [],
+        }),
       });
 
-      const j=await r.json();
+      const data = await res.json();
 
-      if(!r.ok){
-        setSaveMessage(j.error||"Gagal menyimpan posting.");
+      if (!res.ok) {
+        setMessage(data.error || "Gagal menyimpan posting.");
         return;
       }
 
-      setSaveMessage("✅ Posting berhasil disimpan ke database.");
-
-    }catch(e){
-      setSaveMessage("Gagal terhubung ke server.");
+      setMessage("Posting berhasil disimpan.");
+    } catch (error) {
+      setMessage("Terjadi kesalahan.");
     }
   }
 
-  const platformAccounts=accounts.filter(
-    a=>a.platform===platform
+  const tiktokAccounts = accounts.filter(
+    (account) => account.platform === "tiktok"
   );
 
   return (
-    <main style={{
-      maxWidth:900,
-      margin:"40px auto",
-      padding:20,
-      fontFamily:"Arial"
-    }}>
+    <main
+      style={{
+        maxWidth: 700,
+        margin: "0 auto",
+        padding: 24,
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h1>Social Auto Poster</h1>
 
-      <h1>Social Auto Poster v1.3</h1>
+      <p>Kelola dan jadwalkan posting media sosial.</p>
 
-      <p>
-        AI Content Generator • Caption • Hashtag •
-        Multi-platform workflow
-      </p>
+      <hr />
 
-      <section style={{
-        border:"1px solid #ddd",
-        padding:20,
-        borderRadius:12
-      }}>
+      <form onSubmit={handleSubmit}>
+        <h2>Buat Posting</h2>
 
-        <h2>1. Buat Konten</h2>
+        <label>
+          <strong>🎥 Video</strong>
+        </label>
+
+        <br />
 
         <input
-          value={title}
-          onChange={e=>setTitle(e.target.value)}
-          placeholder="Judul/topik video"
-          style={{
-            width:"100%",
-            padding:12,
-            marginBottom:10
-          }}
+          type="file"
+          accept="video/mp4,video/quicktime,video/*"
+          onChange={handleVideoChange}
+          style={{ marginTop: 10, marginBottom: 10 }}
         />
 
-        <select
-          value={platform}
-          onChange={e=>{
-            setPlatform(e.target.value);
-            setAccountId("");
-          }}
-          style={{
-            padding:10,
-            marginRight:10
-          }}
-        >
-          <option value="tiktok">TikTok</option>
-          <option value="youtube">YouTube</option>
-          <option value="instagram">Instagram</option>
-          <option value="facebook">Facebook</option>
-        </select>
-
-        <select
-          value={style}
-          onChange={e=>setStyle(e.target.value)}
-          style={{padding:10}}
-        >
-          <option>persuasif</option>
-          <option>santai</option>
-          <option>edukatif</option>
-          <option>storytelling</option>
-        </select>
-
-        <div>
-          <button
-            onClick={generate}
-            disabled={loading}
+        {video && (
+          <div
             style={{
-              padding:"12px 18px",
-              marginTop:14
+              padding: 12,
+              background: "#f3f3f3",
+              borderRadius: 8,
+              marginBottom: 16,
             }}
           >
-            {loading?"Membuat...":"Generate Konten"}
-          </button>
-        </div>
+            <strong>Video dipilih:</strong>
+            <br />
+            {video.name}
+            <br />
+            {(video.size / 1024 / 1024).toFixed(2)} MB
+          </div>
+        )}
 
-      </section>
+        <br />
 
-      {result && (
-        <section style={{
-          border:"1px solid #ddd",
-          padding:20,
-          borderRadius:12,
-          marginTop:20
-        }}>
-
-          {result.error ? (
-            <p>{result.error}</p>
-          ) : (
-            <>
-              <h3>Hook</h3>
-              <p>{result.hook}</p>
-
-              <h3>Title</h3>
-              <p>{result.title}</p>
-
-              <h3>Caption</h3>
-
-              <textarea
-                value={caption}
-                onChange={e=>setCaption(e.target.value)}
-                rows={6}
-                style={{
-                  width:"100%",
-                  padding:10
-                }}
-              />
-
-              <h3>Hashtag</h3>
-              <p>{result.hashtags?.join(" ")}</p>
-
-            </>
-          )}
-
-        </section>
-      )}
-
-      <section style={{
-        border:"1px solid #ddd",
-        padding:20,
-        borderRadius:12,
-        marginTop:20
-      }}>
-
-        <h2>2. Simpan Posting</h2>
-
-        <label>Nama video</label>
+        <label>
+          <strong>Nama video</strong>
+        </label>
 
         <input
           value={videoName}
-          onChange={e=>setVideoName(e.target.value)}
-          placeholder="Contoh: Review Produk Viral"
+          onChange={(e) => setVideoName(e.target.value)}
+          placeholder="Nama video"
           style={{
-            width:"100%",
-            padding:12,
-            margin:"8px 0 15px"
+            width: "100%",
+            padding: 12,
+            marginTop: 6,
+            marginBottom: 16,
+            boxSizing: "border-box",
           }}
         />
 
-        <label>Caption</label>
+        <label>
+          <strong>Caption</strong>
+        </label>
 
         <textarea
           value={caption}
-          onChange={e=>setCaption(e.target.value)}
-          placeholder="Caption posting"
-          rows={6}
+          onChange={(e) => setCaption(e.target.value)}
+          placeholder="Tulis caption..."
+          rows={4}
           style={{
-            width:"100%",
-            padding:12,
-            margin:"8px 0 15px"
+            width: "100%",
+            padding: 12,
+            marginTop: 6,
+            marginBottom: 16,
+            boxSizing: "border-box",
           }}
         />
 
-        <label>Platform</label>
+        <label>
+          <strong>Platform</strong>
+        </label>
 
-        <p>
-          <strong>{platform.toUpperCase()}</strong>
-        </p>
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          style={{
+            width: "100%",
+            padding: 12,
+            marginTop: 6,
+            marginBottom: 16,
+          }}
+        >
+          <option value="tiktok">TikTok</option>
+        </select>
 
-        <label>Akun</label>
+        <label>
+          <strong>Akun TikTok</strong>
+        </label>
 
         <select
           value={accountId}
-          onChange={e=>setAccountId(e.target.value)}
+          onChange={(e) => setAccountId(e.target.value)}
           style={{
-            width:"100%",
-            padding:12,
-            margin:"8px 0 15px"
+            width: "100%",
+            padding: 12,
+            marginTop: 6,
+            marginBottom: 16,
           }}
         >
-          <option value="">
-            Pilih akun {platform}
-          </option>
+          <option value="">Pilih akun TikTok</option>
 
-          {platformAccounts.map(account=>(
-            <option
-              key={account.id}
-              value={account.id}
-            >
-              {account.displayName ||
-               account.externalId ||
-               account.id}
+          {tiktokAccounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.displayName || "TikTok account"}
             </option>
           ))}
-
         </select>
 
-        {platformAccounts.length===0 && (
-  <div>
-    <p>
-      ⚠️ Belum ada akun {platform} yang terhubung.
-    </p>
-
-    {platform==="tiktok" && (
-      <a
-        href="/api/auth/tiktok"
-        style={{
-          display:"inline-block",
-          padding:"12px 18px",
-          marginTop:10,
-          border:"1px solid #000",
-          borderRadius:8,
-          textDecoration:"none",
-          fontWeight:"bold"
-        }}
-      >
-        🔗 Hubungkan TikTok
-      </a>
-    )}
-  </div>
-)}
-
-        <label>Jadwal posting</label>
+        <label>
+          <strong>Jadwal</strong>
+        </label>
 
         <input
           type="datetime-local"
           value={schedule}
-          onChange={e=>setSchedule(e.target.value)}
+          onChange={(e) => setSchedule(e.target.value)}
           style={{
-            width:"100%",
-            padding:12,
-            margin:"8px 0 15px"
+            width: "100%",
+            padding: 12,
+            marginTop: 6,
+            marginBottom: 20,
+            boxSizing: "border-box",
           }}
         />
 
         <button
-          onClick={savePost}
+          type="submit"
+          disabled={!video}
           style={{
-            padding:"12px 20px",
-            fontWeight:"bold"
+            width: "100%",
+            padding: 14,
+            fontSize: 16,
+            cursor: video ? "pointer" : "not-allowed",
           }}
         >
-          💾 Simpan Posting
+          Simpan Posting
         </button>
 
-        {saveMessage && (
-          <p style={{
-            marginTop:15,
-            fontWeight:"bold"
-          }}>
-            {saveMessage}
+        {message && (
+          <p style={{ marginTop: 16 }}>
+            {message}
           </p>
         )}
-
-      </section>
-
+      </form>
     </main>
   );
 }
