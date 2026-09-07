@@ -16,7 +16,9 @@ export default function Home() {
     fetch("/api/accounts")
       .then((res) => res.json())
       .then((data) => {
-        const list = Array.isArray(data) ? data : data.accounts || [];
+        const list = Array.isArray(data)
+  ? data
+  : data.accounts || data.items || [];
         setAccounts(list);
 
         const tiktok = list.find((a) => a.platform === "tiktok");
