@@ -27,21 +27,44 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  function handleVideoChange(e) {
-    const file = e.target.files?.[0];
+  
+async function handleVideoChange(e) {
+  const file = e.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    if (!file.type.startsWith("video/")) {
-      setMessage("File harus berupa video.");
+  if (!file.type.startsWith("video/")) {
+    setMessage("File harus berupa video.");
+    return;
+  }
+
+  setVideo(file);
+  setVideoName(file.name);
+  setMessage("Mengupload video...");
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setMessage(data.error || "Gagal mengupload video.");
       return;
     }
 
-    setVideo(file);
-    setVideoName(file.name);
-    setMessage(`Video dipilih: ${file.name}`);
-  }
+    setMessage("Video berhasil diupload.");
 
+    window.__uploadedVideoUrl = data.url;
+  } catch (error) {
+    setMessage("Gagal mengupload video.");
+  }
+}
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -55,7 +78,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           videoName,
-          videoUrl: "",
+          videoUrl: window.__uploadedVideoUrl || "",
           caption,
           schedule: schedule || null,
           platforms: [platform],
