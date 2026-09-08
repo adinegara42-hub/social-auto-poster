@@ -59,7 +59,7 @@ export default function Home() {
           caption,
           schedule: schedule || null,
           platforms: [platform],
-          accountIds: accountId ? [accountId] : [],
+          accountIds: accountId ? { tiktok: accountId } : {},
         }),
       });
 
