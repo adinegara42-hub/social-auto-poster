@@ -37,24 +37,50 @@ async function publishTarget(target) {
     return;
   }
 
-  if (target.platform === "tiktok") {
-    const stat = await fsStat(filePath);
-    const init = await initTikTokDirectPost({
-      accessToken:account.accessToken,
-      videoSize:stat.size,
-      caption:post.caption || ""
-    });
-    const publishId = init.data?.publish_id;
-    const uploadUrl = init.data?.upload_url;
-    if (!publishId || !uploadUrl) throw new Error(`TikTok init tidak lengkap: ${JSON.stringify(init)}`);
-    await uploadTikTokFile({accessToken:account.accessToken,uploadUrl,filePath});
-    await prisma.postTarget.update({
-      where:{id:target.id},
-      data:{status:"processing",externalPostId:publishId,errorMessage:null}
-    });
-    await queue.add("tiktok-status",{targetId:target.id},{delay:8000,attempts:3,backoff:{type:"exponential",delay:5000},removeOnComplete:true});
-    return;
+if (target.platform === "tiktok") {
+  if (!post.videoUrl) {
+    throw new Error("URL video tidak tersedia");
   }
+
+  const init = await initTikTokDirectPost({
+    accessToken: account.accessToken,
+    videoUrl: post.videoUrl,
+    caption: post.caption || ""
+  });
+
+  const publishId = init.data?.publish_id;
+
+  if (!publishId) {
+    throw new Error(
+      `TikTok init tidak lengkap: ${JSON.stringify(init)}`
+    );
+  }
+
+  await prisma.postTarget.update({
+    where: { id: target.id },
+    data: {
+      status: "processing",
+      externalPostId: publishId,
+      errorMessage: null
+    }
+  });
+
+  await queue.add(
+    "tiktok-status",
+    { targetId: target.id },
+    {
+      delay: 8000,
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 5000
+      },
+      removeOnComplete: true
+    }
+  );
+
+  return;
+}
 
   throw new Error(`Platform ${target.platform} belum memiliki publishing engine`);
 }
