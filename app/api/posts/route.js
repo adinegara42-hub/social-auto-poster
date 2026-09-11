@@ -28,7 +28,11 @@ export async function POST(req) {
       if(!accountIds[p]) return NextResponse.json({error:`Akun ${p} wajib dipilih`},{status:400});
     }
 
-    const when = new Date(schedule);
+    const when = new Date(
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(schedule)
+    ? `${schedule}:00+07:00`
+    : schedule
+);
     if(Number.isNaN(when.getTime())) return NextResponse.json({error:"schedule tidak valid"},{status:400});
     if(when.getTime() < Date.now()-30_000) return NextResponse.json({error:"Jadwal harus di masa depan"},{status:400});
 
