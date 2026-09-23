@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           }}
         >
           <img
-            src="/icon.png"
+            src="/icon.svg"
             alt="Logo Social Auto Poster"
             width="64"
             height="64"
