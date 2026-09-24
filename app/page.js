@@ -264,6 +264,28 @@ async function handleVideoChange(e) {
           </p>
         )}
       </form>
+          <hr style={{ marginTop: 32, marginBottom: 20 }} />
+
+<footer style={{ textAlign: "center", paddingBottom: 24 }}>
+  <p>
+    Social Auto Poster membantu Anda mengelola dan menjadwalkan
+    posting media sosial.
+  </p>
+
+  <p>
+    <a href="/terms" style={{ marginRight: 16 }}>
+      Terms of Service
+    </a>
+
+    <a href="/privacy">
+      Privacy Policy
+    </a>
+  </p>
+
+  <p style={{ fontSize: 13, color: "#666" }}>
+    © 2026 Social Auto Poster
+  </p>
+</footer>
     </main>
   );
 }
